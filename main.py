@@ -4,8 +4,19 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+from functions.schemas import available_functions
+
 
 MODEL = "gemini-2.0-flash-001"
+SYSTEM_PROMPT = """
+You are a helpful AI coding agent.
+
+When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
+
+- List files and directories
+
+All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
+"""
 
 
 def initialise_client():
@@ -42,6 +53,18 @@ def print_token_counts(response):
     print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
 
+def print_response(response):
+    function_calls = response.function_calls
+
+    if function_calls:
+        for function_call_part in function_calls:
+            print(
+                f"Calling function: {function_call_part.name}({function_call_part.args})"
+            )
+    else:
+        print(f"Response: \n {response.text}")
+
+
 def main():
     client = initialise_client()
 
@@ -50,14 +73,20 @@ def main():
     messages = [
         types.Content(role="user", parts=[types.Part(text=prompt)]),
     ]
-    response = client.models.generate_content(model=MODEL, contents=messages)
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=messages,
+        config=types.GenerateContentConfig(
+            tools=[available_functions], system_instruction=SYSTEM_PROMPT
+        ),
+    )
 
     if verbose:
         print(f"User prompt: {prompt}")
-        print(f"Response: {response.text}")
+        print_response(response)
         print_token_counts(response)
     else:
-        print(f"Response {response.text}")
+        print_response(response)
 
 
 if __name__ == "__main__":

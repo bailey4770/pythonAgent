@@ -1,4 +1,4 @@
-from functions.get_file_contents import get_file_content
+from functions.utils import get_file_content
 
 lorem_test = ["calculator", "lorem.txt"]
 args = [
@@ -9,10 +9,10 @@ args = [
 ]
 
 for arg in args:
-    content, err = get_file_content(*arg)
-
-    print(f"Showing result for args {arg}")
-    if err:
-        print(f"    {err}")
-    else:
+    try:
+        content = get_file_content(*arg)
+        print(f"Showing result for args {arg}")
         print(content)
+
+    except Exception as e:
+        print(f"Error {e}")
